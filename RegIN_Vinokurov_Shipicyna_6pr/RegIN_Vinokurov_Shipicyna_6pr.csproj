@@ -149,6 +149,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Pages\Regin.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Pages\Confirmation.xaml.cs">
@@ -159,6 +163,9 @@
     </Compile>
     <Compile Include="Pages\Recovery.xaml.cs">
       <DependentUpon>Recovery.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\Regin.xaml.cs">
+      <DependentUpon>Regin.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
