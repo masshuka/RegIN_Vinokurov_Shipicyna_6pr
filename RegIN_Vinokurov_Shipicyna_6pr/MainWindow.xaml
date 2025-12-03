@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RegIN_Vinokurov_Shipicyna_6pr"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Модуль авторизации" MinWidth="800" MinHeight="450" Icon="/Images/ic-user.png" Height="450" Width="800">
     <Grid>
-        
+        <Frame x:Name="frame" NavigationUIVisibility="Hidden"/>
     </Grid>
 </Window>
