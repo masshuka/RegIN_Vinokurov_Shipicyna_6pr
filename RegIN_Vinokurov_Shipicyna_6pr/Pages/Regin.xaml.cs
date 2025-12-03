@@ -12,12 +12,15 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using RegIN_Vinokurov_Shipicyna_6pr.Classes;
+using WpfImage = System.Windows.Controls.Image;
+using AsposeImage = Aspose.Imaging.Image;
+using AsposeImaging = Aspose.Imaging;
 
 namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
 {
@@ -190,7 +193,7 @@ namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
         /// <summary>
         /// Метод регистрации
         /// </summary>
-        void OnBegin()
+        void OnRegin()
         {
             if (!BCorrectLogin)
                 return;
@@ -224,8 +227,8 @@ namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
 
         public void SetNotification(string Message, SolidColorBrush _Color)
         {
-            Username.Content = Message;
-            Username.Foreground = _Color;
+            LNameUser.Content = Message;
+            LNameUser.Foreground = _Color;
         }
 
 
@@ -233,7 +236,7 @@ namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
         {
             if (FileDialogImage.ShowDialog() == true)
             {
-                using (Imaging.Image image = Imaging.Image.Load(FileDialogImage.FileName))
+                using (AsposeImage image = AsposeImage.Load(FileDialogImage.FileName))
                 {
                     int NewWidth = 0;
                     int NewHeight = 0;
@@ -253,7 +256,7 @@ namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
                     image.Save("IUser.jpg");
                 }
 
-                using (Imaging.RasterImage rasterImage = (Imaging.RasterImage)Imaging.Image.Load("IUser.jpg"))
+                using (AsposeImaging.RasterImage rasterImage = (AsposeImaging.RasterImage)AsposeImaging.RasterImage.Load("IUser.jpg"))
                 {
                     if (!rasterImage.IsCached)
                     {
@@ -269,7 +272,7 @@ namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
                     else
                         Y = (int)((rasterImage.Height - 256f) / 2);
 
-                    Imaging.Rectangle rectangle = new Imaging.Rectangle(X, Y, Width, Height);
+                    AsposeImaging.Rectangle rectangle = new AsposeImaging.Rectangle(X, Y, Width, Height);
                     rasterImage.Crop(rectangle);
 
                     rasterImage.Save("IUser.jpg");
@@ -287,10 +290,10 @@ namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
                     EndAnimation.From = 0;
                     EndAnimation.To = 1;
                     EndAnimation.Duration = TimeSpan.FromSeconds(1.2);
-                    IUser.BeginAnimation(Image.OpacityProperty, EndAnimation);
+                    IUser.BeginAnimation(System.Windows.Controls.Image.OpacityProperty, EndAnimation);
                 };
 
-                IUser.BeginAnimation(Image.OpacityProperty, StartAnimation);
+                IUser.BeginAnimation(System.Windows.Controls.Image.OpacityProperty, StartAnimation);
                 BSetImages = true;
             }
             else

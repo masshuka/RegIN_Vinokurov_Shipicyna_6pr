@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using RegIN_Vinokurov_Shipicyna_6pr.Classes;
 
 namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
 {
@@ -53,7 +54,7 @@ namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
         public void SendMailCode()
         {
             Code = new Random().Next(100000, 999999);
-            Classes.SendMail.SendMessage($"Login code: {Code}", MainWindow.mainWindow.UserLogin.Login);
+            Classes.SendMail.SendMessage($"Login code: {Code}", MainWindow.mainWindow.UserLogIn.Login);
             Thread TSendMailCode = new Thread(TimerSendMailCode);
             TSendMailCode.Start();
         }

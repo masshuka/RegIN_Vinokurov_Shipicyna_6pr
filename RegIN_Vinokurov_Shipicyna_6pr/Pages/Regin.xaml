@@ -41,7 +41,7 @@
                     </Image.Clip>
                 </Image>
                 <Label
-                    x:Name="lNameUser"
+                    x:Name="LNameUser"
                     Margin="10,137,10,0"
                     HorizontalContentAlignment="Center"
                     Content=""

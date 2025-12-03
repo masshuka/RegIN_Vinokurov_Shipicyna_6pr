@@ -15,6 +15,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using RegIN_Vinokurov_Shipicyna_6pr.Classes;
 
 namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
 {
@@ -32,6 +33,11 @@ namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
             MainWindow.mainWindow.UserLogIn.HandlerInCorrectLogin += InCorrectLogin;
             Capture.HandlerCorrectCapture += CorrectCapture;
         }
+
+        public void SetNotification(string Message, SolidColorBrush _Color)
+        {
+            LNameUser.Content = Message;
+            LNameUser.Foreground = _Color;
         }
 
         /// <summary>
@@ -172,11 +178,7 @@ namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
             }
         }
 
-        public void SetNotification(string Message, SolidColorBrush _Color)
-        {
-            username.Content = Message;
-            Username.Foreground = _Color;
-        }
+        
 
         /// <summary>
         /// Открытие страницы логина

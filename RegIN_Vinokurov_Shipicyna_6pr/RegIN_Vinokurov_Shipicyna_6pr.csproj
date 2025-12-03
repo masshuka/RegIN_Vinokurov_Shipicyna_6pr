@@ -218,7 +218,9 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="Images\ic-mail.png" />
+  </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\ic-user.png" />
   </ItemGroup>

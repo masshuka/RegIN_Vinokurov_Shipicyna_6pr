@@ -29,7 +29,7 @@
                     Margin="32"
                     VerticalAlignment="Top"
                     Width="100"
-                    Source="/RegIN;component/Images/ic-mail.png">
+                    Source="/Images/ic-mail.png">
                     <Image.Clip>
                         <EllipseGeometry
                             RadiusX="50"

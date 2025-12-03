@@ -210,6 +210,6 @@ namespace RegIN_Vinokurov_Shipicyna_6pr.Pages
             MainWindow.mainWindow.OpenPage(new Recovery());
 
         private void OpenRegIn(object sender, MouseButtonEventArgs e) =>
-            MainWindow.mainWindow.OpenPage(new RegIn());
+            MainWindow.mainWindow.OpenPage(new Regin());
     }
 }
