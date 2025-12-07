@@ -100,7 +100,7 @@ namespace Regin_New.Pages
         /// </summary>
         public void SetLogin()
         {
-            Regex regex = new Regex(@"([a-zA-Z0-9._-]{4,})@[a-zA-Z0-9._-]{2,}\.[a-zA-Z0-9._-]{2,})");
+            Regex regex = new Regex(@"([a-zA-Z0-9._-]{4,}@[a-zA-Z0-9._-]{2,}\.[a-zA-Z0-9._-]{2,})");
             BCorrectLogin = regex.IsMatch(TbLogin.Text);
 
             if (regex.IsMatch(TbLogin.Text) == true)

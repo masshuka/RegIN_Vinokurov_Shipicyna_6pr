@@ -51,41 +51,57 @@ namespace Regin_New.Pages
 
                 try
                 {
-                    BitmapImage blImg = new BitmapImage();
-                    MemoryStream ms = new MemoryStream(MainWindow.mainWindow.UserLogIn.Image);
-
-                    blImg.BeginInit();
-                    blImg.StreamSource = ms;
-                    blImg.EndInit();
-
-                    ImageSource imgSrc = blImg;
-
-                    DoubleAnimation StartAnimation = new DoubleAnimation();
-                    StartAnimation.From = 1;
-                    StartAnimation.To = 0;
-                    StartAnimation.Duration = TimeSpan.FromSeconds(0.6);
-
-                    StartAnimation.Completed += delegate
+                    if (MainWindow.mainWindow.UserLogIn.Image != null &&
+                        MainWindow.mainWindow.UserLogIn.Image.Length > 0)
                     {
-                        IUser.Source = imgSrc;
+                        BitmapImage biImg = new BitmapImage();
+                        MemoryStream ms = new MemoryStream(MainWindow.mainWindow.UserLogIn.Image);
 
-                        DoubleAnimation EndAnimation = new DoubleAnimation();
-                        EndAnimation.From = 0;
-                        EndAnimation.To = 1;
-                        EndAnimation.Duration = TimeSpan.FromSeconds(1.2);
+                        biImg.BeginInit();
+                        biImg.CacheOption = BitmapCacheOption.OnLoad;
+                        biImg.StreamSource = ms;
+                        biImg.EndInit();
+                        biImg.Freeze();
 
-                        IUser.BeginAnimation(Image.OpacityProperty, EndAnimation);
-                    };
+                        ImageSource imgSrc = biImg;
 
-                    IUser.BeginAnimation(Image.OpacityProperty, StartAnimation);
-                }
+                        DoubleAnimation StartAnimation = new DoubleAnimation();
+                        StartAnimation.From = 1;
+                        StartAnimation.To = 0;
+                        StartAnimation.Duration = TimeSpan.FromSeconds(0.6);
+
+                        StartAnimation.Completed += delegate
+                        {
+                            IUser.Source = imgSrc;
+
+                            DoubleAnimation EndAnimation = new DoubleAnimation();
+                            EndAnimation.From = 0;
+                            EndAnimation.To = 1;
+                            EndAnimation.Duration = TimeSpan.FromSeconds(1.2);
+
+                            IUser.BeginAnimation(Image.OpacityProperty, EndAnimation);
+                            ms.Close();
+                        };
+
+                        IUser.BeginAnimation(Image.OpacityProperty, StartAnimation);
+                    }
+                    else
+                        {
+                            // Если изображения нет, используем стандартную иконку
+                            IUser.Source = new BitmapImage(new Uri("pack://application:,,,/Images/ic-user.png"));
+                        }
+                    }
                 catch (Exception exp)
                 {
                     Debug.WriteLine(exp.Message);
+                    IUser.Source = new BitmapImage(new Uri("pack://application:,,,/Images/ic-user.png"));
                 }
 
                 OldLogin = TbLogin.Text;
-                SendNewPassword();
+                if (IsCapture)
+                {
+                    SendNewPassword();
+                }
             }
         }
 

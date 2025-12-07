@@ -1,6 +1,7 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,8 +47,24 @@ namespace Regin_New.Classes
 
                     if (!userQuery.IsDBNull(4))
                     {
-                        this.Image = new byte[64 * 1024];
-                        userQuery.GetBytes(4, 0, Image, 0, Image.Length);
+                        try
+                        {
+                            long dataSize = userQuery.GetBytes(4, 0, null, 0, 0);
+
+                            if (dataSize > 0)
+                            {
+                                byte[] imageData = new byte[dataSize];
+
+                                userQuery.GetBytes(4, 0, imageData, 0, (int)dataSize);
+
+                                this.Image = imageData;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            this.Image = new byte[0];
+                            Debug.WriteLine($"Ошибка чтения изображения: {ex.Message}");
+                        }
                     }
 
                     this.DateUpdate = userQuery.GetDateTime(5);

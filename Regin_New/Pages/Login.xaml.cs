@@ -94,13 +94,24 @@ namespace Regin_New.Pages
 
                 try
                 {
-                    BitmapImage bling = new BitmapImage();
-                    MemoryStream ms = new MemoryStream(MainWindow.mainWindow.UserLogIn.Image);
-                    bling.BeginInit();
-                    bling.StreamSource = ms;
-                    bling.EndInit();
+                    if (MainWindow.mainWindow.UserLogIn.Image == null ||
+                        MainWindow.mainWindow.UserLogIn.Image.Length == 0)
+                    {
+                        // Устанавливаем изображение по умолчанию
+                        User.Source = new BitmapImage(new Uri("pack://application:,,,/Images/ic-user.png"));
+                        OldLogin = TbLogin.Text;
+                        return;
+                    }
 
-                    ImageSource imgSrc = bling;
+                    BitmapImage biImg = new BitmapImage();
+                    MemoryStream ms = new MemoryStream(MainWindow.mainWindow.UserLogIn.Image);
+                    biImg.BeginInit();
+                    biImg.CacheOption = BitmapCacheOption.OnLoad;
+                    biImg.StreamSource = ms;
+                    biImg.EndInit();
+                    biImg.Freeze();
+
+                    ImageSource imgSrc = biImg;
                     DoubleAnimation StartAnimation = new DoubleAnimation();
                     StartAnimation.From = 1;
                     StartAnimation.To = 0;

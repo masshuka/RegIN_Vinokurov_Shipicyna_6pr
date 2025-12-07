@@ -97,7 +97,7 @@
                     Content="Back"
                     Margin="10,373,10,0"
                     VerticalAlignment="Top"
-                    Foreground="#FF673AB7"
+                    Foreground="#FF1F92B5"
                     FontSize="10"
                     MouseDown="OpenLogin"/>
             </Grid>
