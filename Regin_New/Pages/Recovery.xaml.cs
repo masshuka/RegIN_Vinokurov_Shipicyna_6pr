@@ -1,21 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Regin_New.Classes;
 
 namespace Regin_New.Pages
 {
@@ -29,6 +21,11 @@ namespace Regin_New.Pages
         public Recovery()
         {
             InitializeComponent();
+            SubscribeToEvents();
+        }
+
+        private void SubscribeToEvents()
+        {
             MainWindow.mainWindow.UserLogIn.HandlerCorrectLogin += CorrectLogin;
             MainWindow.mainWindow.UserLogIn.HandlerInCorrectLogin += InCorrectLogin;
             Capture.HandlerCorrectCapture += CorrectCapture;
@@ -40,168 +37,139 @@ namespace Regin_New.Pages
             LNameUser.Foreground = _Color;
         }
 
-        /// <summary>
-        /// Метод правильного ввода логина
-        /// </summary>
         private void CorrectLogin()
         {
-            if (OldLogin != TbLogin.Text)
+            if (OldLogin == TbLogin.Text) return;
+
+            SetNotification("Hi, " + MainWindow.mainWindow.UserLogIn.Name, Brushes.Black);
+            UpdateUserImage();
+            OldLogin = TbLogin.Text;
+
+            if (IsCapture)
+                SendNewPassword();
+        }
+
+        private void UpdateUserImage()
+        {
+            try
             {
-                SetNotification("Hi, " + MainWindow.mainWindow.UserLogIn.Name, Brushes.Black);
-
-                try
+                if (MainWindow.mainWindow.UserLogIn.Image != null &&
+                    MainWindow.mainWindow.UserLogIn.Image.Length > 0)
                 {
-                    if (MainWindow.mainWindow.UserLogIn.Image != null &&
-                        MainWindow.mainWindow.UserLogIn.Image.Length > 0)
-                    {
-                        BitmapImage biImg = new BitmapImage();
-                        MemoryStream ms = new MemoryStream(MainWindow.mainWindow.UserLogIn.Image);
-
-                        biImg.BeginInit();
-                        biImg.CacheOption = BitmapCacheOption.OnLoad;
-                        biImg.StreamSource = ms;
-                        biImg.EndInit();
-                        biImg.Freeze();
-
-                        ImageSource imgSrc = biImg;
-
-                        DoubleAnimation StartAnimation = new DoubleAnimation();
-                        StartAnimation.From = 1;
-                        StartAnimation.To = 0;
-                        StartAnimation.Duration = TimeSpan.FromSeconds(0.6);
-
-                        StartAnimation.Completed += delegate
-                        {
-                            IUser.Source = imgSrc;
-
-                            DoubleAnimation EndAnimation = new DoubleAnimation();
-                            EndAnimation.From = 0;
-                            EndAnimation.To = 1;
-                            EndAnimation.Duration = TimeSpan.FromSeconds(1.2);
-
-                            IUser.BeginAnimation(Image.OpacityProperty, EndAnimation);
-                            ms.Close();
-                        };
-
-                        IUser.BeginAnimation(Image.OpacityProperty, StartAnimation);
-                    }
-                    else
-                        {
-                            // Если изображения нет, используем стандартную иконку
-                            IUser.Source = new BitmapImage(new Uri("pack://application:,,,/Images/ic-user.png"));
-                        }
-                    }
-                catch (Exception exp)
-                {
-                    Debug.WriteLine(exp.Message);
-                    IUser.Source = new BitmapImage(new Uri("pack://application:,,,/Images/ic-user.png"));
+                    var bitmapImage = CreateBitmapImage(MainWindow.mainWindow.UserLogIn.Image);
+                    AnimateImageChange(bitmapImage);
                 }
-
-                OldLogin = TbLogin.Text;
-                if (IsCapture)
+                else
                 {
-                    SendNewPassword();
+                    SetDefaultUserImage();
                 }
+            }
+            catch (Exception exp)
+            {
+                Debug.WriteLine(exp.Message);
+                SetDefaultUserImage();
             }
         }
 
-        /// <summary>
-        /// Метод неправильного ввода логина
-        /// </summary>
+        private BitmapImage CreateBitmapImage(byte[] imageData)
+        {
+            var bitmapImage = new BitmapImage();
+            using (var ms = new MemoryStream(imageData))
+            {
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.StreamSource = ms;
+                bitmapImage.EndInit();
+                bitmapImage.Freeze();
+            }
+            return bitmapImage;
+        }
+
+        private void AnimateImageChange(BitmapImage newImage)
+        {
+            var fadeOut = CreateAnimation(1, 0, 0.6);
+            fadeOut.Completed += (s, e) =>
+            {
+                IUser.Source = newImage;
+                var fadeIn = CreateAnimation(0, 1, 1.2);
+                IUser.BeginAnimation(Image.OpacityProperty, fadeIn);
+            };
+            IUser.BeginAnimation(Image.OpacityProperty, fadeOut);
+        }
+
         private void InCorrectLogin()
         {
-            if (LNameUser.Content != "")
+            if (!string.IsNullOrEmpty(LNameUser.Content?.ToString()))
             {
                 LNameUser.Content = "";
-                DoubleAnimation StartAnimation = new DoubleAnimation();
-                StartAnimation.From = 1;
-                StartAnimation.To = 0;
-                StartAnimation.Duration = TimeSpan.FromSeconds(0.6);
-
-                StartAnimation.Completed += delegate
-                {
-                    IUser.Source = new BitmapImage(new Uri("pack://application:,,,/Images/ic-user.png"));
-                    DoubleAnimation EndAnimation = new DoubleAnimation();
-                    EndAnimation.From = 0;
-                    EndAnimation.To = 1;
-                    EndAnimation.Duration = TimeSpan.FromSeconds(1.2);
-                    IUser.BeginAnimation(OpacityProperty, EndAnimation);
-                };
-
-                IUser.BeginAnimation(OpacityProperty, StartAnimation);
+                SetDefaultUserImage();
             }
 
             if (TbLogin.Text.Length > 0)
                 SetNotification("Login is incorrect", Brushes.Red);
         }
 
-        /// <summary>
-        /// Метод успешного ввода капчи
-        /// </summary>
+        private void SetDefaultUserImage()
+        {
+            var fadeOut = CreateAnimation(1, 0, 0.6);
+            fadeOut.Completed += (s, e) =>
+            {
+                IUser.Source = new BitmapImage(new Uri("pack://application:,,,/Images/ic-user.png"));
+                var fadeIn = CreateAnimation(0, 1, 1.2);
+                IUser.BeginAnimation(OpacityProperty, fadeIn);
+            };
+            IUser.BeginAnimation(OpacityProperty, fadeOut);
+        }
+
+        private DoubleAnimation CreateAnimation(double from, double to, double seconds)
+        {
+            return new DoubleAnimation
+            {
+                From = from,
+                To = to,
+                Duration = TimeSpan.FromSeconds(seconds)
+            };
+        }
+
         private void CorrectCapture()
         {
-            // Отключаем элемент капчи
             Capture.IsEnabled = false;
-            // Запоминаем что ввод капчи осуществлён
             IsCapture = true;
-            // Вызываем генерацию нового пароля
             SendNewPassword();
         }
 
-        /// <summary>
-        /// Метод ввода логина
-        /// </summary>
-        private void SetLogin(object sender, KeyEventArgs e)
+        private void SetLogin(KeyEventArgs e = null, RoutedEventArgs re = null)
         {
-            if (e.Key == Key.Enter)
+            if (e?.Key == Key.Enter || re != null)
                 MainWindow.mainWindow.UserLogIn.GetUserLogin(TbLogin.Text);
         }
 
-        /// <summary>
-        /// Метод ввода логина
-        /// </summary>
-        private void SetLogin(object sender, RoutedEventArgs e) =>
-            MainWindow.mainWindow.UserLogIn.GetUserLogin(TbLogin.Text);
+        private void SetLogin(object sender, KeyEventArgs e) => SetLogin(e);
+        private void SetLogin(object sender, RoutedEventArgs e) => SetLogin(null, e);
 
-        /// <summary>
-        /// Метод создания нового пароля
-        /// </summary>
         public void SendNewPassword()
         {
-            if (IsCapture)
-            {
-                if (MainWindow.mainWindow.UserLogIn.Password != String.Empty)
-                {
-                    DoubleAnimation StartAnimation = new DoubleAnimation();
-                    StartAnimation.From = 1;
-                    StartAnimation.To = 0;
-                    StartAnimation.Duration = TimeSpan.FromSeconds(0.6);
+            if (!IsCapture || string.IsNullOrEmpty(MainWindow.mainWindow.UserLogIn.Password))
+                return;
 
-                    StartAnimation.Completed += delegate
-                    {
-                        IUser.Source = new BitmapImage(new Uri("pack://application:,,,/Images/ic-mail.png"));
-                        DoubleAnimation EndAnimation = new DoubleAnimation();
-                        EndAnimation.From = 0;
-                        EndAnimation.To = 1;
-                        EndAnimation.Duration = TimeSpan.FromSeconds(1.2);
-                        IUser.BeginAnimation(OpacityProperty, EndAnimation);
-                    };
-
-                    IUser.BeginAnimation(OpacityProperty, StartAnimation);
-                    SetNotification("An email has been sent to your email.", Brushes.Black);
-                    MainWindow.mainWindow.UserLogIn.CrateNewPassword();
-                }
-            }
+            ShowMailSentAnimation();
+            SetNotification("An email has been sent to your email.", Brushes.Black);
+            MainWindow.mainWindow.UserLogIn.CrateNewPassword();
         }
 
-        
-
-        /// <summary>
-        /// Открытие страницы логина
-        /// </summary>
-        private void OpenLogin(object sender, MouseButtonEventArgs e)
+        private void ShowMailSentAnimation()
         {
-            MainWindow.mainWindow.OpenPage(new Login());
+            var fadeOut = CreateAnimation(1, 0, 0.6);
+            fadeOut.Completed += (s, e) =>
+            {
+                IUser.Source = new BitmapImage(new Uri("pack://application:,,,/Images/ic-mail.png"));
+                var fadeIn = CreateAnimation(0, 1, 1.2);
+                IUser.BeginAnimation(OpacityProperty, fadeIn);
+            };
+            IUser.BeginAnimation(OpacityProperty, fadeOut);
         }
+
+        private void OpenLogin(object sender, MouseButtonEventArgs e) =>
+            MainWindow.mainWindow.OpenPage(new Login());
     }
 }

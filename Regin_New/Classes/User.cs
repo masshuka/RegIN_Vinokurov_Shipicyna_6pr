@@ -3,8 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Regin_New.Classes
 {
@@ -25,11 +24,7 @@ namespace Regin_New.Classes
 
         public void GetUserLogin(string Login)
         {
-            this.Id = -1;
-            this.Login = String.Empty;
-            this.Password = String.Empty;
-            this.Name = String.Empty;
-            this.Image = new byte[0];
+            ResetUserData();
 
             MySqlConnection mySqlConnection = WorkingDB.OpenConnection();
 
@@ -40,89 +35,120 @@ namespace Regin_New.Classes
                 if (userQuery.HasRows)
                 {
                     userQuery.Read();
-                    this.Id = userQuery.GetInt32(0);
-                    this.Login = userQuery.GetString(1);
-                    this.Password = userQuery.GetString(2);
-                    this.Name = userQuery.GetString(3);
-
-                    if (!userQuery.IsDBNull(4))
-                    {
-                        try
-                        {
-                            long dataSize = userQuery.GetBytes(4, 0, null, 0, 0);
-
-                            if (dataSize > 0)
-                            {
-                                byte[] imageData = new byte[dataSize];
-
-                                userQuery.GetBytes(4, 0, imageData, 0, (int)dataSize);
-
-                                this.Image = imageData;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            this.Image = new byte[0];
-                            Debug.WriteLine($"Ошибка чтения изображения: {ex.Message}");
-                        }
-                    }
-
-                    this.DateUpdate = userQuery.GetDateTime(5);
-                    this.DateCreate = userQuery.GetDateTime(6);
-
-                    HandlerCorrectLogin.Invoke();
+                    LoadUserData(userQuery);
+                    HandlerCorrectLogin?.Invoke();
                 }
                 else
                 {
-                    HandlerInCorrectLogin.Invoke();
+                    HandlerInCorrectLogin?.Invoke();
                 }
             }
             else
             {
-                HandlerInCorrectLogin.Invoke();
+                HandlerInCorrectLogin?.Invoke();
             }
 
             WorkingDB.CloseConnection(mySqlConnection);
         }
 
+        private void ResetUserData()
+        {
+            Id = -1;
+            Login = String.Empty;
+            Password = String.Empty;
+            Name = String.Empty;
+            Image = new byte[0];
+        }
+
+        private void LoadUserData(MySqlDataReader reader)
+        {
+            Id = reader.GetInt32(0);
+            Login = reader.GetString(1);
+            Password = reader.GetString(2);
+            Name = reader.GetString(3);
+
+            if (!reader.IsDBNull(4))
+            {
+                LoadImageData(reader);
+            }
+
+            DateUpdate = reader.GetDateTime(5);
+            DateCreate = reader.GetDateTime(6);
+        }
+
+        private void LoadImageData(MySqlDataReader reader)
+        {
+            try
+            {
+                long dataSize = reader.GetBytes(4, 0, null, 0, 0);
+
+                if (dataSize > 0)
+                {
+                    byte[] imageData = new byte[dataSize];
+                    reader.GetBytes(4, 0, imageData, 0, (int)dataSize);
+                    Image = imageData;
+                }
+            }
+            catch (Exception ex)
+            {
+                Image = new byte[0];
+                Debug.WriteLine($"Ошибка чтения изображения: {ex.Message}");
+            }
+        }
+
         public void SetUser()
+        {
+            ExecuteDatabaseCommand(
+                "INSERT INTO users (Login, Password, Name, Image, DateUpdate, DateCreate) " +
+                "VALUES (@Login, @Password, @Name, @Image, @DateUpdate, @DateCreate)",
+                cmd => AddUserParameters(cmd),
+                cmd => cmd.ExecuteNonQuery()
+            );
+        }
+
+        public void CrateNewPassword()
+        {
+            if (String.IsNullOrEmpty(Login)) return;
+
+            Password = GeneratePass();
+
+            ExecuteDatabaseCommand(
+                $"UPDATE users SET Password=@Password WHERE Login = @Login",
+                cmd =>
+                {
+                    cmd.Parameters.AddWithValue("@Password", Password);
+                    cmd.Parameters.AddWithValue("@Login", Login);
+                },
+                cmd => cmd.ExecuteNonQuery()
+            );
+
+            SendMail.SendMessage($"Your account password has been changed.\nNew password: {Password}", Login);
+        }
+
+        private void ExecuteDatabaseCommand(string query, Action<MySqlCommand> addParameters, Action<MySqlCommand> executeAction)
         {
             MySqlConnection mySqlConnection = WorkingDB.OpenConnection();
 
             if (WorkingDB.OpenConnection(mySqlConnection))
             {
-                MySqlCommand mySqlCommand = new MySqlCommand("INSERT INTO users (Login, Password, Name, Image, DateUpdate, DateCreate) VALUES (@Login, @Password, @Name, @Image, @DateUpdate, @DateCreate)", mySqlConnection);
-
-                mySqlCommand.Parameters.AddWithValue("@Login", this.Login);
-                mySqlCommand.Parameters.AddWithValue("@Password", this.Password);
-                mySqlCommand.Parameters.AddWithValue("@Name", this.Name);
-                mySqlCommand.Parameters.AddWithValue("@Image", this.Image);
-                mySqlCommand.Parameters.AddWithValue("@DateUpdate", this.DateUpdate);
-                mySqlCommand.Parameters.AddWithValue("@DateCreate", this.DateCreate);
-
-                mySqlCommand.ExecuteNonQuery();
+                using (MySqlCommand mySqlCommand = new MySqlCommand(query, mySqlConnection))
+                {
+                    addParameters(mySqlCommand);
+                    executeAction(mySqlCommand);
+                }
             }
 
             WorkingDB.CloseConnection(mySqlConnection);
         }
 
-        public void CrateNewPassword()
+        private void AddUserParameters(MySqlCommand command)
         {
-            if (Login != String.Empty)
-            {
-                Password = GeneratePass();
-
-                MySqlConnection mySqlConnection = WorkingDB.OpenConnection();
-
-                if (WorkingDB.OpenConnection(mySqlConnection))
-                {
-                    WorkingDB.Query($"UPDATE users SET Password='{this.Password}' WHERE Login = '{this.Login}'", mySqlConnection);
-                }
-
-                WorkingDB.CloseConnection(mySqlConnection);
-
-                SendMail.SendMessage($"Your account password has been changed.\nNew password: {this.Password}", this.Login);
-            }
+            command.Parameters.AddWithValue("@Login", Login);
+            command.Parameters.AddWithValue("@Password", Password);
+            command.Parameters.AddWithValue("@Name", Name);
+            command.Parameters.AddWithValue("@Image", Image);
+            command.Parameters.AddWithValue("@DateUpdate", DateUpdate);
+            command.Parameters.AddWithValue("@DateCreate", DateCreate);
         }
 
         public string GeneratePass()
@@ -134,15 +160,9 @@ namespace Regin_New.Classes
             char[] ArrSymbols = { '-', '_', '!', '@', '#', '$', '%', '^', '&', '*' };
             char[] ArrUppercase = { 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c', 'v', 'b', 'n', 'm' };
 
-            for (int i = 0; i < 1; i++)
-            {
-                NewPassword.Add(ArrNumbers[rnd.Next(0, ArrNumbers.Length)]);
-            }
-
-            for (int i = 0; i < 1; i++)
-            {
-                NewPassword.Add(ArrSymbols[rnd.Next(0, ArrSymbols.Length)]);
-            }
+            // Добавляем обязательные символы
+            NewPassword.Add(ArrNumbers[rnd.Next(0, ArrNumbers.Length)]);
+            NewPassword.Add(ArrSymbols[rnd.Next(0, ArrSymbols.Length)]);
 
             for (int i = 0; i < 2; i++)
             {
@@ -154,6 +174,7 @@ namespace Regin_New.Classes
                 NewPassword.Add(ArrUppercase[rnd.Next(0, ArrUppercase.Length)]);
             }
 
+            // Перемешиваем символы (ваш оригинальный алгоритм)
             for (int i = 0; i < NewPassword.Count; i++)
             {
                 int RandomSymbol = rnd.Next(0, NewPassword.Count);
@@ -162,14 +183,8 @@ namespace Regin_New.Classes
                 NewPassword[i] = Symbol;
             }
 
-            string NPassword = "";
-
-            for (int i = 0; i < NewPassword.Count; i++)
-            {
-                NPassword += NewPassword[i];
-            }
-
-            return NPassword;
+            // Собираем пароль в строку
+            return new string(NewPassword.ToArray());
         }
     }
 }

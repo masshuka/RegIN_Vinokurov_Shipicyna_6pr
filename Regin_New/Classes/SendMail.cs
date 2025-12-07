@@ -1,25 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mail;
+﻿using System.Net.Mail;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Regin_New.Classes
 {
-    public class SendMail
+    public static class SendMail
     {
-        public static void SendMessage(string Message, string To)
+        private static readonly SmtpClient smtpClient = new("smtp.yandex.ru")
         {
-            var smtpClient = new SmtpClient("smtp.yandex.ru")
-            {
-                Port = 587,
-                Credentials = new NetworkCredential("msvlls@yandex.ru", "vitfdmtkwzsmssjp"),
-                EnableSsl = true,
-            };
+            Port = 587,
+            Credentials = new NetworkCredential("msvlls@yandex.ru", "vitfdmtkwzsmssjp"),
+            EnableSsl = true
+        };
 
-            smtpClient.Send("msvlls@yandex.ru", To, "RegIN_6pr", Message);
+        private const string FromEmail = "msvlls@yandex.ru";
+        private const string Subject = "RegIN_6pr";
+
+        public static void SendMessage(string message, string to)
+        {
+            smtpClient.Send(FromEmail, to, Subject, message);
         }
     }
 }

@@ -1,15 +1,8 @@
-﻿using System.Text;
+﻿using Regin_New.Classes;
+using Regin_New.Pages;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Regin_New.Classes;
 
 namespace Regin_New;
 
@@ -25,28 +18,39 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         mainWindow = this;
-        OpenPage(new Pages.Login());
+        OpenPage(new Login());
     }
 
     public void OpenPage(Page page)
     {
-        DoubleAnimation StartAnimation = new DoubleAnimation();
-        StartAnimation.From = 1;
-        StartAnimation.To = 0;
-        StartAnimation.Duration = TimeSpan.FromSeconds(0.6);
+        AnimatePageTransition(page);
+    }
 
-        StartAnimation.Completed += delegate
+    private void AnimatePageTransition(Page page)
+    {
+        AnimateOpacity(1, 0, 0.6, () =>
         {
             frame.Navigate(page);
+            AnimateOpacity(0, 1, 1.2, null);
+        });
+    }
 
-            DoubleAnimation EndAnimation = new DoubleAnimation();
-            EndAnimation.From = 0;
-            EndAnimation.To = 1;
-            EndAnimation.Duration = TimeSpan.FromSeconds(1.2);
-
-            frame.BeginAnimation(Frame.OpacityProperty, EndAnimation);
+    private void AnimateOpacity(double from, double to, double seconds, AnimationCompletedCallback callback)
+    {
+        var animation = new DoubleAnimation
+        {
+            From = from,
+            To = to,
+            Duration = TimeSpan.FromSeconds(seconds)
         };
 
-        frame.BeginAnimation(Frame.OpacityProperty, StartAnimation);
+        if (callback != null)
+        {
+            animation.Completed += (s, e) => callback();
+        }
+
+        frame.BeginAnimation(Frame.OpacityProperty, animation);
     }
+
+    private delegate void AnimationCompletedCallback();
 }

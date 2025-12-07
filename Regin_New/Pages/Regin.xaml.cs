@@ -1,26 +1,16 @@
 ﻿using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Regin_New.Classes;
-using WpfImage = System.Windows.Controls.Image;
-using System.Windows.Interop;
-using Image = Aspose.Imaging.Image;
 using Aspose.Imaging;
+using Image = Aspose.Imaging.Image;
 
 namespace Regin_New.Pages
 {
@@ -76,13 +66,8 @@ namespace Regin_New.Pages
         /// <summary>
         /// Функция не правильно введённого логина
         /// </summary>
-        private void InCorrectLogin() =>
-            SetNotification("", Brushes.Black);
+        private void InCorrectLogin() => SetNotification("", Brushes.Black);
 
-
-        /// <summary>
-        /// Метод ввода логина
-        /// </summary>
         private void SetLogin(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
@@ -92,7 +77,7 @@ namespace Regin_New.Pages
         /// <summary>
         /// Метод ввода логина
         /// </summary>
-        private void SetLogin(object sender, System.Windows.RoutedEventArgs e) =>
+        private void SetLogin(object sender, RoutedEventArgs e) =>
             SetLogin();
 
         /// <summary>
@@ -103,7 +88,7 @@ namespace Regin_New.Pages
             Regex regex = new Regex(@"([a-zA-Z0-9._-]{4,}@[a-zA-Z0-9._-]{2,}\.[a-zA-Z0-9._-]{2,})");
             BCorrectLogin = regex.IsMatch(TbLogin.Text);
 
-            if (regex.IsMatch(TbLogin.Text) == true)
+            if (BCorrectLogin)
             {
                 SetNotification("", Brushes.Black);
                 MainWindow.mainWindow.UserLogIn.GetUserLogin(TbLogin.Text);
@@ -114,11 +99,10 @@ namespace Regin_New.Pages
             OnRegin();
         }
 
-        #region SetPassword
         /// <summary>
         /// Метод ввода пароля
         /// </summary>
-        private void SetPassword(object sender, System.Windows.RoutedEventArgs e) =>
+        private void SetPassword(object sender, RoutedEventArgs e) =>
             SetPassword();
 
         /// <summary>
@@ -144,7 +128,7 @@ namespace Regin_New.Pages
 
             BCorrectPassword = regex.IsMatch(PbPassword.Password);
 
-            if (regex.IsMatch(PbPassword.Password) == true)
+            if (BCorrectPassword)
             {
                 SetNotification("", Brushes.Black);
                 if (PbConfirmPassword.Password.Length > 0)
@@ -154,9 +138,7 @@ namespace Regin_New.Pages
             else
                 SetNotification("Invalid password", Brushes.Red);
         }
-        #endregion
 
-        #region SetConfirmPassword
         /// <summary>
         /// Метод повторного ввода пароля
         /// </summary>
@@ -169,7 +151,7 @@ namespace Regin_New.Pages
         /// <summary>
         /// Метод повторного ввода пароля
         /// </summary>
-        private void ConfirmPassword(object sender, System.Windows.RoutedEventArgs e) =>
+        private void ConfirmPassword(object sender, RoutedEventArgs e) =>
             ConfirmPassword();
 
         /// <summary>
@@ -179,7 +161,7 @@ namespace Regin_New.Pages
         {
             BCorrectConfirmPassword = PbConfirmPassword.Password == PbPassword.Password;
 
-            if (PbConfirmPassword.Password != PbPassword.Password)
+            if (!BCorrectConfirmPassword)
                 SetNotification("Passwords do not match", Brushes.Red);
             else
             {
@@ -188,7 +170,6 @@ namespace Regin_New.Pages
                     SetPassword();
             }
         }
-        #endregion
 
         /// <summary>
         /// Метод регистрации
@@ -231,73 +212,85 @@ namespace Regin_New.Pages
             LNameUser.Foreground = _Color;
         }
 
-
         private void SelectImage(object sender, MouseButtonEventArgs e)
         {
             if (FileDialogImage.ShowDialog() == true)
             {
-                using (Image image = Image.Load(FileDialogImage.FileName))
-                {
-                    int NewWidth = 0;
-                    int NewHeight = 0;
-
-                    if (image.Width > image.Height)
-                    {
-                        NewWidth = (int)(image.Width * (256f / image.Height));
-                        NewHeight = 256;
-                    }
-                    else
-                    {
-                        NewWidth = 256;
-                        NewHeight = (int)(image.Height * (256f / image.Width));
-                    }
-
-                    image.Resize(NewWidth, NewHeight);
-                    image.Save("IUser.jpg");
-                }
-
-                using (RasterImage rasterImage = (RasterImage)RasterImage.Load("IUser.jpg"))
-                {
-                    if (!rasterImage.IsCached)
-                    {
-                        rasterImage.CacheData();
-                    }
-                    int X = 0;
-                    int Width = 256;
-                    int Y = 0;
-                    int Height = 256;
-
-                    if (rasterImage.Width > rasterImage.Height)
-                        X = (int)((rasterImage.Width - 256f) / 2);
-                    else
-                        Y = (int)((rasterImage.Height - 256f) / 2);
-
-                    Aspose.Imaging.Rectangle rectangle = new Aspose.Imaging.Rectangle(X, Y, Width, Height);
-                    rasterImage.Crop(rectangle);
-
-                    rasterImage.Save("IUser.jpg");
-                }
-
-                DoubleAnimation StartAnimation = new DoubleAnimation();
-                StartAnimation.From = 1;
-                StartAnimation.To = 0;
-                StartAnimation.Duration = TimeSpan.FromSeconds(0.6);
-
-                StartAnimation.Completed += delegate
-                {
-                    IUser.Source = new BitmapImage(new Uri(Directory.GetCurrentDirectory() + @"\IUser.jpg"));
-                    DoubleAnimation EndAnimation = new DoubleAnimation();
-                    EndAnimation.From = 0;
-                    EndAnimation.To = 1;
-                    EndAnimation.Duration = TimeSpan.FromSeconds(1.2);
-                    IUser.BeginAnimation(System.Windows.Controls.Image.OpacityProperty, EndAnimation);
-                };
-
-                IUser.BeginAnimation(System.Windows.Controls.Image.OpacityProperty, StartAnimation);
+                ProcessSelectedImage();
                 BSetImages = true;
             }
             else
                 BSetImages = false;
+        }
+
+        private void ProcessSelectedImage()
+        {
+            string fileName = "IUser.jpg";
+            string filePath = Directory.GetCurrentDirectory() + @"\" + fileName;
+
+            // Загружаем и изменяем размер изображения
+            using (var image = Image.Load(FileDialogImage.FileName))
+            {
+                int NewWidth = 0;
+                int NewHeight = 0;
+
+                if (image.Width > image.Height)
+                {
+                    NewWidth = (int)(image.Width * (256f / image.Height));
+                    NewHeight = 256;
+                }
+                else
+                {
+                    NewWidth = 256;
+                    NewHeight = (int)(image.Height * (256f / image.Width));
+                }
+
+                image.Resize(NewWidth, NewHeight);
+                image.Save(filePath);
+            }
+
+            // Обрезаем изображение до квадрата
+            using (var rasterImage = (RasterImage)RasterImage.Load(filePath))
+            {
+                if (!rasterImage.IsCached)
+                {
+                    rasterImage.CacheData();
+                }
+
+                int X = 0;
+                int Y = 0;
+
+                if (rasterImage.Width > rasterImage.Height)
+                    X = (int)((rasterImage.Width - 256f) / 2);
+                else
+                    Y = (int)((rasterImage.Height - 256f) / 2);
+
+                var rectangle = new Aspose.Imaging.Rectangle(X, Y, 256, 256);
+                rasterImage.Crop(rectangle);
+                rasterImage.Save(filePath);
+            }
+
+            ShowImageWithAnimation(filePath);
+        }
+
+        private void ShowImageWithAnimation(string filePath)
+        {
+            DoubleAnimation StartAnimation = new DoubleAnimation();
+            StartAnimation.From = 1;
+            StartAnimation.To = 0;
+            StartAnimation.Duration = TimeSpan.FromSeconds(0.6);
+
+            StartAnimation.Completed += delegate
+            {
+                IUser.Source = new BitmapImage(new Uri(filePath));
+                DoubleAnimation EndAnimation = new DoubleAnimation();
+                EndAnimation.From = 0;
+                EndAnimation.To = 1;
+                EndAnimation.Duration = TimeSpan.FromSeconds(1.2);
+                IUser.BeginAnimation(System.Windows.Controls.Image.OpacityProperty, EndAnimation);
+            };
+
+            IUser.BeginAnimation(System.Windows.Controls.Image.OpacityProperty, StartAnimation);
         }
 
         /// <summary>

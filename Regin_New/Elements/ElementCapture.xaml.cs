@@ -1,17 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Regin_New.Elements
 {
@@ -25,6 +17,7 @@ namespace Regin_New.Elements
         string StrCapture = "";
         int ElementWidth = 280;
         int ElementHeight = 50;
+        private readonly Random random = new Random();
 
         public ElementCapture()
         {
@@ -43,58 +36,74 @@ namespace Regin_New.Elements
 
         void CreateBackground()
         {
-            Random ThisRandom = new Random();
             for (int i = 0; i < 100; i++)
             {
-                int back = ThisRandom.Next(0, 10);
-                Label LBackground = new Label()
-                {
-                    Content = back,
-                    FontSize = ThisRandom.Next(10, 16),
-                    FontWeight = FontWeights.Bold,
-                    Foreground = new SolidColorBrush(Color.FromArgb(100, (byte)ThisRandom.Next(0, 255), (byte)ThisRandom.Next(0, 255), (byte)ThisRandom.Next(0, 255))),
-                    Margin = new Thickness(ThisRandom.Next(0, ElementWidth - 20), ThisRandom.Next(0, ElementHeight - 20), 0, 0)
-                };
-                Capture.Children.Add(LBackground);
+                Capture.Children.Add(CreateLabel(
+                    random.Next(0, 10).ToString(),
+                    random.Next(10, 16),
+                    100,
+                    random.Next(0, ElementWidth - 20),
+                    random.Next(0, ElementHeight - 20)
+                ));
             }
         }
 
         void Background()
         {
-            Random ThisRandom = new Random();
+            var codeBuilder = new StringBuilder();
+
             for (int i = 0; i < 4; i++)
             {
-                int back = ThisRandom.Next(0, 10);
-                Label Code = new Label()
-                {
-                    Content = back,
-                    FontSize = 30,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = new SolidColorBrush(Color.FromArgb(255, (byte)ThisRandom.Next(0, 255), (byte)ThisRandom.Next(0, 255), (byte)ThisRandom.Next(0, 255))),
-                    Margin = new Thickness(ElementWidth / 2 - 60 + i * 30, ThisRandom.Next(-10, 10), 0, 0)
-                };
-                StrCapture += back.ToString();
-                Capture.Children.Add(Code);
+                int digit = random.Next(0, 10);
+                codeBuilder.Append(digit);
+
+                Capture.Children.Add(CreateLabel(
+                    digit.ToString(),
+                    30,
+                    255,
+                    ElementWidth / 2 - 60 + i * 30,
+                    random.Next(-10, 10)
+                ));
             }
+
+            StrCapture = codeBuilder.ToString();
         }
 
-        public bool OnCapture()
+        private Label CreateLabel(string content, int fontSize, byte opacity, int marginLeft, int marginTop)
         {
-            return StrCapture == InputCapture.Text;
+            return new Label()
+            {
+                Content = content,
+                FontSize = fontSize,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(GetRandomColor(opacity)),
+                Margin = new Thickness(marginLeft, marginTop, 0, 0)
+            };
         }
+
+        private Color GetRandomColor(byte opacity)
+        {
+            return Color.FromArgb(
+                opacity,
+                (byte)random.Next(0, 256),
+                (byte)random.Next(0, 256),
+                (byte)random.Next(0, 256)
+            );
+        }
+
+        private bool IsCaptchaValid() => StrCapture == InputCapture.Text;
 
         private void EnterCapture(object sender, KeyEventArgs e)
         {
-            if (InputCapture.Text.Length == 4)
+            if (InputCapture.Text.Length != 4) return;
+
+            if (!IsCaptchaValid())
             {
-                if (!OnCapture())
-                {
-                    CreateCapture();
-                }
-                else if (HandlerCorrectCapture != null)
-                {
-                    HandlerCorrectCapture.Invoke();
-                }
+                CreateCapture();
+            }
+            else
+            {
+                HandlerCorrectCapture?.Invoke();
             }
         }
     }

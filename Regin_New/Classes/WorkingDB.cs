@@ -1,25 +1,20 @@
 ﻿using MySql.Data.MySqlClient;
-using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
 
 namespace Regin_New.Classes
 {
-    public class WorkingDB
+    public static class WorkingDB
     {
-        readonly static string connection = "server=localhost; port=3306; database=regin; user=root; pwd=;";
+        private const string ConnectionString = "server=localhost; port=3306; database=regin; user=root; pwd=;";
 
         public static MySqlConnection OpenConnection()
         {
             try
             {
-                MySqlConnection mySqlConnection = new MySqlConnection(connection);
-                mySqlConnection.Open();
-                return mySqlConnection;
+                var connection = new MySqlConnection(ConnectionString);
+                connection.Open();
+                return connection;
             }
             catch (Exception exp)
             {
@@ -28,21 +23,19 @@ namespace Regin_New.Classes
             }
         }
 
-        public static MySqlDataReader Query(string Sql, MySqlConnection mySqlConnection)
+        public static MySqlDataReader Query(string Sql, MySqlConnection connection) =>
+            new MySqlCommand(Sql, connection).ExecuteReader();
+
+        public static void CloseConnection(MySqlConnection connection)
         {
-            MySqlCommand mySqlCommand = new MySqlCommand(Sql, mySqlConnection);
-            return mySqlCommand.ExecuteReader();
+            if (connection?.State == System.Data.ConnectionState.Open)
+            {
+                connection.Close();
+                MySqlConnection.ClearPool(connection);
+            }
         }
 
-        public static void CloseConnection(MySqlConnection mySqlConnection)
-        {
-            mySqlConnection.Close();
-            MySqlConnection.ClearPool(mySqlConnection);
-        }
-
-        public static bool OpenConnection(MySqlConnection mySqlConnection)
-        {
-            return mySqlConnection != null && mySqlConnection.State == System.Data.ConnectionState.Open;
-        }
+        public static bool OpenConnection(MySqlConnection connection) =>
+            connection != null && connection.State == System.Data.ConnectionState.Open;
     }
 }
