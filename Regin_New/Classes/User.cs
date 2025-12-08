@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-
 namespace Regin_New.Classes
 {
     public class User
@@ -13,6 +12,7 @@ namespace Regin_New.Classes
         public string Login { get; set; }
         public string Password { get; set; }
         public string Name { get; set; }
+        public string PinCode { get; set; } = string.Empty;
         public byte[] Image = new byte[0];
         public DateTime DateUpdate { get; set; }
         public DateTime DateCreate { get; set; }
@@ -57,6 +57,7 @@ namespace Regin_New.Classes
             Login = String.Empty;
             Password = String.Empty;
             Name = String.Empty;
+            PinCode = string.Empty;
             Image = new byte[0];
         }
 
@@ -66,6 +67,11 @@ namespace Regin_New.Classes
             Login = reader.GetString(1);
             Password = reader.GetString(2);
             Name = reader.GetString(3);
+
+            if (!reader.IsDBNull(7))
+            {
+                PinCode = reader.GetString(7);
+            }
 
             if (!reader.IsDBNull(4))
             {
@@ -92,7 +98,7 @@ namespace Regin_New.Classes
             catch (Exception ex)
             {
                 Image = new byte[0];
-                Debug.WriteLine($"Ошибка чтения изображения: {ex.Message}");
+                Debug.WriteLine($"Image load error: {ex.Message}");
             }
         }
 
@@ -123,6 +129,24 @@ namespace Regin_New.Classes
             );
 
             SendMail.SendMessage($"Your account password has been changed.\nNew password: {Password}", Login);
+        }
+
+        public void UpdatePinCode(string newPinCode)
+        {
+            if (Id <= 0) return;
+
+            PinCode = newPinCode;
+
+            ExecuteDatabaseCommand(
+                "UPDATE users SET PinCode = @PinCode, DateUpdate = @DateUpdate WHERE Id = @Id",
+                cmd =>
+                {
+                    cmd.Parameters.AddWithValue("@PinCode", PinCode);
+                    cmd.Parameters.AddWithValue("@DateUpdate", DateTime.Now);
+                    cmd.Parameters.AddWithValue("@Id", Id);
+                },
+                cmd => cmd.ExecuteNonQuery()
+            );
         }
 
         private void ExecuteDatabaseCommand(string query, Action<MySqlCommand> addParameters, Action<MySqlCommand> executeAction)
@@ -160,7 +184,6 @@ namespace Regin_New.Classes
             char[] ArrSymbols = { '-', '_', '!', '@', '#', '$', '%', '^', '&', '*' };
             char[] ArrUppercase = { 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c', 'v', 'b', 'n', 'm' };
 
-            // Добавляем обязательные символы
             NewPassword.Add(ArrNumbers[rnd.Next(0, ArrNumbers.Length)]);
             NewPassword.Add(ArrSymbols[rnd.Next(0, ArrSymbols.Length)]);
 
@@ -174,7 +197,6 @@ namespace Regin_New.Classes
                 NewPassword.Add(ArrUppercase[rnd.Next(0, ArrUppercase.Length)]);
             }
 
-            // Перемешиваем символы (ваш оригинальный алгоритм)
             for (int i = 0; i < NewPassword.Count; i++)
             {
                 int RandomSymbol = rnd.Next(0, NewPassword.Count);
@@ -183,7 +205,6 @@ namespace Regin_New.Classes
                 NewPassword[i] = Symbol;
             }
 
-            // Собираем пароль в строку
             return new string(NewPassword.ToArray());
         }
     }

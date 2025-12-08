@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
@@ -13,9 +14,6 @@ using System.Windows.Media.Imaging;
 
 namespace Regin_New.Pages
 {
-    /// <summary>
-    /// Логика взаимодействия для Login.xaml
-    /// </summary>
     public partial class Login : Page
     {
         string OldLogin;
@@ -27,6 +25,7 @@ namespace Regin_New.Pages
         {
             InitializeComponent();
             SubscribeToEvents();
+            AddPinCodeSwitch();
         }
 
         private void SubscribeToEvents()
@@ -47,7 +46,7 @@ namespace Regin_New.Pages
             if (!string.IsNullOrEmpty(Username.Content?.ToString()))
             {
                 Username.Content = "";
-                AnimateImageChange(User, "pack://application:,,,/Images/ic-user.png");
+                AnimateImageChange("pack://application:,,,/Images/ic-user.png");
             }
 
             if (TbLogin.Text.Length > 0)
@@ -90,7 +89,7 @@ namespace Regin_New.Pages
             try
             {
                 var bitmapImage = CreateBitmapImage(MainWindow.mainWindow.UserLogIn.Image);
-                AnimateImageChange(User, bitmapImage);
+                AnimateImageChange(bitmapImage);
             }
             catch (Exception exp)
             {
@@ -113,28 +112,28 @@ namespace Regin_New.Pages
             return bitmapImage;
         }
 
-        private void AnimateImageChange(Image imageControl, BitmapImage newImage)
+        private void AnimateImageChange(BitmapImage newImage)
         {
             var fadeOut = CreateAnimation(1, 0, 0.6);
             fadeOut.Completed += (s, e) =>
             {
-                imageControl.Source = newImage;
+                User.Source = newImage;
                 var fadeIn = CreateAnimation(0, 1, 1.2);
-                imageControl.BeginAnimation(Image.OpacityProperty, fadeIn);
+                User.BeginAnimation(Image.OpacityProperty, fadeIn);
             };
-            imageControl.BeginAnimation(Image.OpacityProperty, fadeOut);
+            User.BeginAnimation(Image.OpacityProperty, fadeOut);
         }
 
-        private void AnimateImageChange(Image imageControl, string imageUri)
+        private void AnimateImageChange(string imageUri)
         {
             var fadeOut = CreateAnimation(1, 0, 0.6);
             fadeOut.Completed += (s, e) =>
             {
-                imageControl.Source = new BitmapImage(new Uri(imageUri));
+                User.Source = new BitmapImage(new Uri(imageUri));
                 var fadeIn = CreateAnimation(0, 1, 1.2);
-                imageControl.BeginAnimation(OpacityProperty, fadeIn);
+                User.BeginAnimation(OpacityProperty, fadeIn);
             };
-            imageControl.BeginAnimation(OpacityProperty, fadeOut);
+            User.BeginAnimation(OpacityProperty, fadeOut);
         }
 
         private void SetDefaultImage()
@@ -258,5 +257,104 @@ namespace Regin_New.Pages
 
         private void OpenRegIn(object sender, MouseButtonEventArgs e) =>
             MainWindow.mainWindow.OpenPage(new Regin());
+
+        private void AddPinCodeSwitch()
+        {
+            var switchPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(10, 400, 10, 0),
+                VerticalAlignment = VerticalAlignment.Top
+            };
+
+            var switchLabel = new Label
+            {
+                Content = "Use PIN code",
+                FontSize = 11,
+                Foreground = new SolidColorBrush(Color.FromRgb(31, 146, 181))
+            };
+
+            var toggleButton = new CheckBox
+            {
+                Margin = new Thickness(5, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            toggleButton.Checked += (s, e) => SwitchToPinCodeMode();
+            toggleButton.Unchecked += (s, e) => SwitchToPasswordMode();
+
+            switchPanel.Children.Add(switchLabel);
+            switchPanel.Children.Add(toggleButton);
+
+            var grid = (Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0);
+            grid.Children.Add(switchPanel);
+        }
+
+        private void SwitchToPinCodeMode()
+        {
+            TbPassword.Visibility = Visibility.Collapsed;
+            var passwordLabel = ((Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0))
+                .Children.OfType<Label>().FirstOrDefault(l => l.Content?.ToString() == "Enter password:");
+            if (passwordLabel != null)
+                passwordLabel.Visibility = Visibility.Collapsed;
+
+            var pinBox = new PasswordBox
+            {
+                Name = "PinCodeBox",
+                Margin = new Thickness(10, 342, 10, 0),
+                VerticalAlignment = VerticalAlignment.Top,
+                Height = 26,
+                MaxLength = 4
+            };
+            pinBox.KeyUp += PinCodeBox_KeyUp;
+
+            var grid = (Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0);
+            grid.Children.Add(pinBox);
+        }
+
+        private void SwitchToPasswordMode()
+        {
+            TbPassword.Visibility = Visibility.Visible;
+            var passwordLabel = ((Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0))
+                .Children.OfType<Label>().FirstOrDefault(l => l.Content?.ToString() == "Enter password:");
+            if (passwordLabel != null)
+                passwordLabel.Visibility = Visibility.Visible;
+
+            var grid = (Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0);
+            var pinBox = grid.Children.OfType<PasswordBox>().FirstOrDefault(p => p.Name == "PinCodeBox");
+            if (pinBox != null)
+                grid.Children.Remove(pinBox);
+        }
+
+        private void PinCodeBox_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                AuthenticateWithPinCode();
+            }
+        }
+
+        private void AuthenticateWithPinCode()
+        {
+            var grid = (Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0);
+            var pinBox = grid.Children.OfType<PasswordBox>().FirstOrDefault(p => p.Name == "PinCodeBox");
+
+            if (pinBox == null || pinBox.Password.Length != 4)
+            {
+                SetNotification("Enter 4-digit PIN", Brushes.Red);
+                return;
+            }
+
+            if (MainWindow.mainWindow.UserLogIn.PinCode == pinBox.Password)
+            {
+                MainWindow.mainWindow.OpenPage(new Confirmation(Confirmation.TypeConfirmation.Login));
+            }
+            else
+            {
+                SetNotification("Invalid PIN", Brushes.Red);
+                pinBox.Password = "";
+            }
+        }
     }
 }

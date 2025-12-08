@@ -3,13 +3,9 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Regin_New.Classes;
 
 namespace Regin_New.Pages
 {
-    /// <summary>
-    /// Логика взаимодействия для Confirmation.xaml
-    /// </summary>
     public partial class Confirmation : Page
     {
         private readonly TypeConfirmation confirmationType;
@@ -78,12 +74,36 @@ namespace Regin_New.Pages
 
             if (confirmationType == TypeConfirmation.Login)
             {
-                MessageBox.Show("Авторизация пользователя успешно подтверждена.");
+                MessageBox.Show("Authorization confirmed successfully.");
+
+                if (string.IsNullOrEmpty(MainWindow.mainWindow.UserLogIn.PinCode))
+                {
+                    var result = MessageBox.Show("Set up a 4-digit PIN for quick login?",
+                        "Quick Login", MessageBoxButton.YesNo);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        MainWindow.mainWindow.OpenPage(new SetPinCode());
+                        return;
+                    }
+                }
             }
             else
             {
                 MainWindow.mainWindow.UserLogIn.SetUser();
-                MessageBox.Show("Регистрация пользователя успешно подтверждена.");
+                MessageBox.Show("Registration confirmed successfully.");
+
+                var result = MessageBox.Show("Set up a 4-digit PIN for quick login?",
+                    "Quick Login", MessageBoxButton.YesNo);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    MainWindow.mainWindow.OpenPage(new SetPinCode());
+                }
+                else
+                {
+                    MainWindow.mainWindow.OpenPage(new Login());
+                }
             }
         }
 
