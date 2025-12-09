@@ -9,12 +9,12 @@
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center">
             <StackPanel Margin="20">
-                <TextBlock Text="Установите 4-значный пин-код"
+                <TextBlock x:Name="TitleTextBlock"
                          FontSize="16" FontWeight="Bold"
                          HorizontalAlignment="Center"
                          Margin="0,0,0,20"/>
 
-                <TextBlock Text="Пин-код будет использоваться для быстрой авторизации"
+                <TextBlock x:Name="DescriptionTextBlock"
                          TextWrapping="Wrap"
                          Margin="0,0,0,20"/>
 

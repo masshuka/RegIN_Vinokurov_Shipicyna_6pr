@@ -3,21 +3,21 @@ using System.Net;
 
 namespace Regin_New.Classes
 {
-    public static class SendMail
+    public class SendMail
     {
-        private static readonly SmtpClient smtpClient = new("smtp.yandex.ru")
+        public static void SendMessage(string Message, string To)
         {
-            Port = 587,
-            Credentials = new NetworkCredential("msvlls@yandex.ru", "vitfdmtkwzsmssjp"),
-            EnableSsl = true
-        };
 
-        private const string FromEmail = "msvlls@yandex.ru";
-        private const string Subject = "RegIN_6pr";
+            var smtpClient = new SmtpClient("smtp.yandex.ru")
+            {
+                Port = 587,
 
-        public static void SendMessage(string message, string to)
-        {
-            smtpClient.Send(FromEmail, to, Subject, message);
+                Credentials = new NetworkCredential("msvlls@yandex.ru", "vitfdmtkwzsmssjp"),
+
+                EnableSsl = true,
+            };
+
+            smtpClient.Send("msvlls@yandex.ru", To, "RegIN_6pr", Message);
         }
     }
 }

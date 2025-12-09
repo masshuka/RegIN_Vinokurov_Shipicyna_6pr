@@ -188,7 +188,14 @@ namespace Regin_New.Classes
             command.Parameters.AddWithValue("@Login", Login);
             command.Parameters.AddWithValue("@Password", Password);
             command.Parameters.AddWithValue("@Name", Name);
-            command.Parameters.AddWithValue("@Image", Image);
+            if (Image != null && Image.Length > 0)
+            {
+                command.Parameters.AddWithValue("@Image", Image);
+            }
+            else
+            {
+                command.Parameters.AddWithValue("@Image", DBNull.Value);
+            }
             command.Parameters.AddWithValue("@DateUpdate", DateUpdate);
             command.Parameters.AddWithValue("@DateCreate", DateCreate);
         }

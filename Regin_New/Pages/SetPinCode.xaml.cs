@@ -10,10 +10,27 @@ namespace Regin_New.Pages
     public partial class SetPinCode : Page
     {
         private bool pinCodeSet = false;
+        private readonly bool isLoginMode;
 
-        public SetPinCode()
+        public SetPinCode(bool isLoginMode = false)
         {
             InitializeComponent();
+            this.isLoginMode = isLoginMode;
+            InitializeTexts();
+        }
+
+        private void InitializeTexts()
+        {
+            if (isLoginMode)
+            {
+                TitleTextBlock.Text = "Введите 4-значный пин-код";
+                DescriptionTextBlock.Text = "Введите ваш PIN-код для авторизации";
+            }
+            else
+            {
+                TitleTextBlock.Text = "Установите 4-значный пин-код";
+                DescriptionTextBlock.Text = "Пин-код будет использоваться для авторизации";
+            }
         }
 
         private void PinCodeTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -25,30 +42,78 @@ namespace Regin_New.Pages
         {
             if (PinCodeTextBox.Text.Length == 4 && !pinCodeSet)
             {
-                // Устанавливаем пин-код в объект пользователя
-                MainWindow.mainWindow.UserLogIn.PinCode = PinCodeTextBox.Text;
-
-                // Сохраняем в БД
-                bool saved = SavePinCodeToDatabase();
-
-                if (saved)
+                if (isLoginMode)
                 {
-                    pinCodeSet = true;
-                    MessageBox.Show($"Пин код '{PinCodeTextBox.Text}' сохранен");
-                    MainWindow.mainWindow.OpenPage(new Login());
+                    bool isValid = CheckPinCode();
+
+                    if (isValid)
+                    {
+                        pinCodeSet = true;
+                        MessageBox.Show("Авторизация успешна.");
+                        MainWindow.mainWindow.OpenPage(new Login());
+                    }
+                    else
+                    {
+                        MessageBox.Show("Неверный PIN-код.");
+                        pinCodeSet = false;
+                        PinCodeTextBox.Text = "";
+                        PinCodeTextBox.Focus();
+                    }
                 }
                 else
                 {
-                    MessageBox.Show("Ошибка сохранения PIN-кода.");
-                    pinCodeSet = false;
-                    PinCodeTextBox.Text = "";
-                    PinCodeTextBox.Focus();
+                    MainWindow.mainWindow.UserLogIn.PinCode = PinCodeTextBox.Text;
+                    bool saved = SavePinCodeToDatabase();
+
+                    if (saved)
+                    {
+                        pinCodeSet = true;
+                        MessageBox.Show("PIN-код успешно установлен.");
+                        MainWindow.mainWindow.OpenPage(new Login());
+                    }
+                    else
+                    {
+                        MessageBox.Show("Ошибка сохранения PIN-кода.");
+                        pinCodeSet = false;
+                        PinCodeTextBox.Text = "";
+                        PinCodeTextBox.Focus();
+                    }
                 }
             }
             else if (PinCodeTextBox.Text.Length > 4)
             {
                 PinCodeTextBox.Text = PinCodeTextBox.Text.Substring(0, 4);
                 PinCodeTextBox.CaretIndex = 4;
+            }
+        }
+
+        private bool CheckPinCode()
+        {
+            try
+            {
+                var connection = Classes.WorkingDB.OpenConnection();
+                if (connection == null)
+                {
+                    MessageBox.Show("Ошибка подключения к базе данных");
+                    return false;
+                }
+
+                using (var cmd = new MySqlCommand(
+                    "SELECT COUNT(*) FROM users WHERE Id = @Id AND PinCode = @PinCode", connection))
+                {
+                    cmd.Parameters.AddWithValue("@Id", MainWindow.mainWindow.UserLogIn.Id);
+                    cmd.Parameters.AddWithValue("@PinCode", PinCodeTextBox.Text);
+
+                    var result = cmd.ExecuteScalar();
+                    Classes.WorkingDB.CloseConnection(connection);
+
+                    return Convert.ToInt32(result) > 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка проверки PIN-кода: {ex.Message}");
+                return false;
             }
         }
 
@@ -76,7 +141,6 @@ namespace Regin_New.Pages
 
                     if (rowsAffected > 0)
                     {
-                        // Обновляем дату в объекте
                         MainWindow.mainWindow.UserLogIn.DateUpdate = DateTime.Now;
                         return true;
                     }
@@ -96,8 +160,17 @@ namespace Regin_New.Pages
 
         private void SkipButton_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Вы сможете установить PIN-код позже. Пока используйте пароль.");
-            MainWindow.mainWindow.OpenPage(new Login());
+            if (isLoginMode)
+            {
+                // Возвращаемся к обычному логину
+                MainWindow.mainWindow.OpenPage(new Login());
+            }
+            else
+            {
+                // Пропускаем установку PIN-кода
+                MessageBox.Show("Вы сможете установить PIN-код позже. Пока используйте пароль.");
+                MainWindow.mainWindow.OpenPage(new Login());
+            }
         }
 
         private void SetPinCode_Loaded(object sender, RoutedEventArgs e)
@@ -106,10 +179,10 @@ namespace Regin_New.Pages
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input,
                 new Action(() => PinCodeTextBox.Focus()));
 
-            // Проверяем ID пользователя
-            if (MainWindow.mainWindow.UserLogIn.Id <= 0)
+            // Проверяем ID пользователя (только в режиме установки)
+            if (!isLoginMode && MainWindow.mainWindow.UserLogIn.Id <= 0)
             {
-                MessageBox.Show("User not found. Please log in again.");
+                MessageBox.Show("Пользователь не найден. Пожалуйста, войдите снова.");
                 MainWindow.mainWindow.OpenPage(new Login());
             }
         }

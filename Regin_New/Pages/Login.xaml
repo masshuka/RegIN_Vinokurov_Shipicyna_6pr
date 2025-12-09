@@ -78,7 +78,7 @@
                    Foreground="#FF1F92B5"
                    Margin="140,373,0,0"
                    VerticalAlignment="Top"
-                   
+                   MouseDown="OpenPinCode"
                    HorizontalAlignment="Left"
                    Width="70"/>
                 <Label Content="Registration"

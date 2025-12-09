@@ -263,6 +263,11 @@ namespace Regin_New.Pages
         private void OpenRegIn(object sender, MouseButtonEventArgs e) =>
             MainWindow.mainWindow.OpenPage(new Regin());
 
+        private void OpenPinCode(object sender, MouseButtonEventArgs e)
+        {
+            MainWindow.mainWindow.OpenPage(new SetPinCode(true));
+        }
+
         private void InitializePinCodeControls()
         {
             SwitchPanel = new StackPanel

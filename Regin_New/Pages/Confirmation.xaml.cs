@@ -83,7 +83,7 @@ namespace Regin_New.Pages
 
                     if (result == MessageBoxResult.Yes)
                     {
-                        MainWindow.mainWindow.OpenPage(new SetPinCode());
+                        MainWindow.mainWindow.OpenPage(new SetPinCode(false)); // Изменено здесь
                         return;
                     }
                 }
@@ -98,7 +98,7 @@ namespace Regin_New.Pages
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    MainWindow.mainWindow.OpenPage(new SetPinCode());
+                    MainWindow.mainWindow.OpenPage(new SetPinCode(false)); // Изменено здесь
                 }
                 else
                 {
