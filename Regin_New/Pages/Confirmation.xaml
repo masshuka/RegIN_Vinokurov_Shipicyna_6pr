@@ -57,7 +57,7 @@
                        HorizontalContentAlignment="Center"
                        Content="A second message can be sent after 60 seconds"
                        VerticalAlignment="Top"
-                       FontSize="10"/>
+                       FontSize="12"/>
                 <Button x:Name="BSendMessage"
                         IsEnabled="False"
                         Width="200"

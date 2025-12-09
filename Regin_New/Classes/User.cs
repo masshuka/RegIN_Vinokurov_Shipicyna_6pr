@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Windows;
 
 namespace Regin_New.Classes
 {
@@ -31,15 +30,12 @@ namespace Regin_New.Classes
 
             if (WorkingDB.OpenConnection(mySqlConnection))
             {
-                MySqlDataReader userQuery = WorkingDB.Query($"SELECT *, PinCode FROM users WHERE Login = '{Login}'", mySqlConnection);
+                MySqlDataReader userQuery = WorkingDB.Query($"SELECT * FROM users WHERE Login = '{Login}'", mySqlConnection);
 
                 if (userQuery.HasRows)
                 {
                     userQuery.Read();
                     LoadUserData(userQuery);
-
-                    MessageBox.Show($"Загружен PIN: {PinCode}");
-
                     HandlerCorrectLogin?.Invoke();
                 }
                 else
@@ -109,13 +105,12 @@ namespace Regin_New.Classes
         public void SetUser()
         {
             ExecuteDatabaseCommand(
-                "INSERT INTO users (Login, Password, Name, Image, DateUpdate, DateCreate, PinCode) " +
-                "VALUES (@Login, @Password, @Name, @Image, @DateUpdate, @DateCreate, @PinCode)",
+                "INSERT INTO users (Login, Password, Name, Image, DateUpdate, DateCreate) " +
+                "VALUES (@Login, @Password, @Name, @Image, @DateUpdate, @DateCreate)",
                 cmd => AddUserParameters(cmd),
                 cmd => cmd.ExecuteNonQuery()
             );
         }
-
 
         public void CrateNewPassword()
         {
@@ -138,38 +133,20 @@ namespace Regin_New.Classes
 
         public void UpdatePinCode(string newPinCode)
         {
-            if (Id <= 0)
-            {
-                MessageBox.Show("Ошибка: пользователь не найден!");
-                return;
-            }
+            if (Id <= 0) return;
 
             PinCode = newPinCode;
 
-            var connection = WorkingDB.OpenConnection();
-            if (connection != null)
-            {
-                try
+            ExecuteDatabaseCommand(
+                "UPDATE users SET PinCode = @PinCode, DateUpdate = @DateUpdate WHERE Id = @Id",
+                cmd =>
                 {
-                    string query = "UPDATE users SET PinCode = @PinCode WHERE Id = @Id";
-                    using (var cmd = new MySqlCommand(query, connection))
-                    {
-                        cmd.Parameters.AddWithValue("@PinCode", newPinCode);
-                        cmd.Parameters.AddWithValue("@Id", Id);
-
-                        int result = cmd.ExecuteNonQuery();
-
-                        if (result > 0)
-                            MessageBox.Show("PIN-код сохранен!");
-                        else
-                            MessageBox.Show("Не удалось сохранить PIN-код");
-                    }
-                }
-                finally
-                {
-                    WorkingDB.CloseConnection(connection);
-                }
-            }
+                    cmd.Parameters.AddWithValue("@PinCode", PinCode);
+                    cmd.Parameters.AddWithValue("@DateUpdate", DateTime.Now);
+                    cmd.Parameters.AddWithValue("@Id", Id);
+                },
+                cmd => cmd.ExecuteNonQuery()
+            );
         }
 
         private void ExecuteDatabaseCommand(string query, Action<MySqlCommand> addParameters, Action<MySqlCommand> executeAction)
@@ -196,7 +173,6 @@ namespace Regin_New.Classes
             command.Parameters.AddWithValue("@Image", Image);
             command.Parameters.AddWithValue("@DateUpdate", DateUpdate);
             command.Parameters.AddWithValue("@DateCreate", DateCreate);
-            command.Parameters.AddWithValue("@PinCode", PinCode ?? (object)DBNull.Value);
         }
 
         public string GeneratePass()

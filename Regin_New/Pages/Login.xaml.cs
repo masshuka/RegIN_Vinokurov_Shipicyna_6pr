@@ -20,18 +20,12 @@ namespace Regin_New.Pages
         int CountSetPassword = 2;
         bool IsCapture = false;
         private const int BlockTimeSeconds = 180;
-        private bool _isUsingPinCode = false;
 
         public Login()
         {
             InitializeComponent();
             SubscribeToEvents();
-
-            // Скрываем кнопку Use PIN-code пока не загружен пользователь
-            // Найдем кнопку Use PIN-code по имени
-            var usePinCodeLabel = FindVisualChild<Label>(this, l => l.Content?.ToString() == "Use PIN-code");
-            if (usePinCodeLabel != null)
-                usePinCodeLabel.Visibility = Visibility.Collapsed;
+            AddPinCodeSwitch();
         }
 
         private void SubscribeToEvents()
@@ -57,16 +51,6 @@ namespace Regin_New.Pages
 
             if (TbLogin.Text.Length > 0)
                 SetNotification("Login is incorrect", Brushes.Red);
-
-            // Скрываем кнопку Use PIN-code при неверном логине
-            var usePinCodeLabel = FindVisualChild<Label>(this, l => l.Content?.ToString() == "Use PIN-code");
-            if (usePinCodeLabel != null)
-                usePinCodeLabel.Visibility = Visibility.Collapsed;
-
-            // Скрываем PIN-контейнер если он был открыт
-            PinCodeContainer.Visibility = Visibility.Collapsed;
-            PasswordLabel.Visibility = Visibility.Visible;
-            TbPassword.Visibility = Visibility.Visible;
         }
 
         private void SetLogin(KeyEventArgs e = null, RoutedEventArgs re = null)
@@ -74,7 +58,7 @@ namespace Regin_New.Pages
             if (e?.Key == Key.Enter || re != null)
             {
                 MainWindow.mainWindow.UserLogIn.GetUserLogin(TbLogin.Text);
-                if (TbPassword.Password.Length > 0 && !_isUsingPinCode)
+                if (TbPassword.Password.Length > 0)
                     SetPassword();
             }
         }
@@ -93,57 +77,11 @@ namespace Regin_New.Pages
             {
                 SetDefaultImage();
                 OldLogin = TbLogin.Text;
-            }
-            else
-            {
-                LoadUserImage();
-                OldLogin = TbLogin.Text;
+                return;
             }
 
-            // Показываем кнопку Use PIN-code только если у пользователя есть PIN
-            UpdateUsePinCodeButtonVisibility();
-        }
-
-        private void UpdateUsePinCodeButtonVisibility()
-        {
-            var usePinCodeLabel = FindVisualChild<Label>(this, l => l.Content?.ToString() == "Use PIN-code");
-            if (usePinCodeLabel != null)
-            {
-                // Проверяем, есть ли у пользователя PIN-код
-                if (!string.IsNullOrEmpty(MainWindow.mainWindow.UserLogIn.PinCode))
-                {
-                    usePinCodeLabel.Visibility = Visibility.Visible;
-
-                    // Убираем старый обработчик и добавляем новый
-                    usePinCodeLabel.MouseDown -= RecoveryPassword; // Удаляем старый
-                    usePinCodeLabel.MouseDown += SwitchToPinCode;   // Добавляем новый
-                }
-                else
-                {
-                    usePinCodeLabel.Visibility = Visibility.Collapsed;
-                }
-            }
-        }
-
-        private void SwitchToPinCode(object sender, MouseButtonEventArgs e)
-        {
-            _isUsingPinCode = true;
-
-            // Скрываем пароль, показываем PIN
-            PasswordLabel.Visibility = Visibility.Collapsed;
-            TbPassword.Visibility = Visibility.Collapsed;
-            PinCodeContainer.Visibility = Visibility.Visible;
-
-            // Фокусируемся на поле PIN
-            if (PinCodeBox != null)
-            {
-                PinCodeBox.Focus();
-            }
-
-            // Скрываем кнопку Use PIN-code
-            var usePinCodeLabel = FindVisualChild<Label>(this, l => l.Content?.ToString() == "Use PIN-code");
-            if (usePinCodeLabel != null)
-                usePinCodeLabel.Visibility = Visibility.Collapsed;
+            LoadUserImage();
+            OldLogin = TbLogin.Text;
         }
 
         private void LoadUserImage()
@@ -263,7 +201,7 @@ namespace Regin_New.Pages
                 new Thread(BlockAuthorization).Start();
             }
 
-            SendMail.SendMessage("Была предпринята попытка входа в Вашу учетную запись.",
+            SendMail.SendMessage("An attempt was made to log into your account.",
                 MainWindow.mainWindow.UserLogIn.Login);
         }
 
@@ -288,7 +226,6 @@ namespace Regin_New.Pages
                 TbLogin.IsEnabled = enabled;
                 TbPassword.IsEnabled = enabled;
                 Capture.IsEnabled = enabled;
-                if (PinCodeBox != null) PinCodeBox.IsEnabled = enabled;
             });
         }
 
@@ -297,7 +234,7 @@ namespace Regin_New.Pages
             Dispatcher.Invoke(() =>
             {
                 var remaining = endTime - DateTime.Now;
-                SetNotification($"Повторная авторизация доступна в: {remaining:mm\\:ss}", Brushes.Red);
+                SetNotification($"Reauthorization available in: {remaining:mm\\:ss}", Brushes.Red);
             });
         }
 
@@ -312,16 +249,6 @@ namespace Regin_New.Pages
                 Capture.CreateCapture();
                 IsCapture = false;
                 CountSetPassword = 2;
-                if (PinCodeBox != null) PinCodeBox.IsEnabled = true;
-
-                // Восстанавливаем режим пароля
-                _isUsingPinCode = false;
-                PinCodeContainer.Visibility = Visibility.Collapsed;
-                PasswordLabel.Visibility = Visibility.Visible;
-                TbPassword.Visibility = Visibility.Visible;
-
-                // Показываем кнопку Use PIN-code если есть PIN
-                UpdateUsePinCodeButtonVisibility();
             });
         }
 
@@ -331,9 +258,78 @@ namespace Regin_New.Pages
         private void OpenRegIn(object sender, MouseButtonEventArgs e) =>
             MainWindow.mainWindow.OpenPage(new Regin());
 
+        private void AddPinCodeSwitch()
+        {
+            var switchPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(10, 400, 10, 0),
+                VerticalAlignment = VerticalAlignment.Top
+            };
+
+            var switchLabel = new Label
+            {
+                Content = "Use PIN code",
+                FontSize = 11,
+                Foreground = new SolidColorBrush(Color.FromRgb(31, 146, 181))
+            };
+
+            var toggleButton = new CheckBox
+            {
+                Margin = new Thickness(5, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            toggleButton.Checked += (s, e) => SwitchToPinCodeMode();
+            toggleButton.Unchecked += (s, e) => SwitchToPasswordMode();
+
+            switchPanel.Children.Add(switchLabel);
+            switchPanel.Children.Add(toggleButton);
+
+            var grid = (Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0);
+            grid.Children.Add(switchPanel);
+        }
+
+        private void SwitchToPinCodeMode()
+        {
+            TbPassword.Visibility = Visibility.Collapsed;
+            var passwordLabel = ((Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0))
+                .Children.OfType<Label>().FirstOrDefault(l => l.Content?.ToString() == "Enter password:");
+            if (passwordLabel != null)
+                passwordLabel.Visibility = Visibility.Collapsed;
+
+            var pinBox = new PasswordBox
+            {
+                Name = "PinCodeBox",
+                Margin = new Thickness(10, 342, 10, 0),
+                VerticalAlignment = VerticalAlignment.Top,
+                Height = 26,
+                MaxLength = 4
+            };
+            pinBox.KeyUp += PinCodeBox_KeyUp;
+
+            var grid = (Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0);
+            grid.Children.Add(pinBox);
+        }
+
+        private void SwitchToPasswordMode()
+        {
+            TbPassword.Visibility = Visibility.Visible;
+            var passwordLabel = ((Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0))
+                .Children.OfType<Label>().FirstOrDefault(l => l.Content?.ToString() == "Enter password:");
+            if (passwordLabel != null)
+                passwordLabel.Visibility = Visibility.Visible;
+
+            var grid = (Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0);
+            var pinBox = grid.Children.OfType<PasswordBox>().FirstOrDefault(p => p.Name == "PinCodeBox");
+            if (pinBox != null)
+                grid.Children.Remove(pinBox);
+        }
+
         private void PinCodeBox_KeyUp(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter && PinCodeBox.Password.Length == 4)
+            if (e.Key == Key.Enter)
             {
                 AuthenticateWithPinCode();
             }
@@ -341,55 +337,24 @@ namespace Regin_New.Pages
 
         private void AuthenticateWithPinCode()
         {
-            if (PinCodeBox == null || PinCodeBox.Password.Length != 4)
+            var grid = (Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0);
+            var pinBox = grid.Children.OfType<PasswordBox>().FirstOrDefault(p => p.Name == "PinCodeBox");
+
+            if (pinBox == null || pinBox.Password.Length != 4)
             {
-                SetNotification("Введите 4-значный PIN-код", Brushes.Red);
+                SetNotification("Enter 4-digit PIN", Brushes.Red);
                 return;
             }
 
-            Debug.WriteLine($"Введенный PIN: {PinCodeBox.Password}");
-            Debug.WriteLine($"PIN в объекте пользователя: {MainWindow.mainWindow.UserLogIn.PinCode}");
-
-            if (MainWindow.mainWindow.UserLogIn.PinCode == PinCodeBox.Password)
+            if (MainWindow.mainWindow.UserLogIn.PinCode == pinBox.Password)
             {
                 MainWindow.mainWindow.OpenPage(new Confirmation(Confirmation.TypeConfirmation.Login));
             }
             else
             {
                 SetNotification("Invalid PIN", Brushes.Red);
-                PinCodeBox.Password = "";
+                pinBox.Password = "";
             }
-        }
-
-        // Вспомогательные методы для поиска элементов
-        private T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T result)
-                    return result;
-
-                var childResult = FindVisualChild<T>(child);
-                if (childResult != null)
-                    return childResult;
-            }
-            return null;
-        }
-
-        private T FindVisualChild<T>(DependencyObject parent, Func<T, bool> predicate) where T : DependencyObject
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T result && predicate(result))
-                    return result;
-
-                var childResult = FindVisualChild(child, predicate);
-                if (childResult != null)
-                    return childResult;
-            }
-            return null;
         }
     }
 }
