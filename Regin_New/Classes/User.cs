@@ -68,9 +68,16 @@ namespace Regin_New.Classes
             Password = reader.GetString(2);
             Name = reader.GetString(3);
 
-            if (!reader.IsDBNull(7))
+            try
             {
-                PinCode = reader.GetString(7);
+                if (reader.FieldCount > 7 && !reader.IsDBNull(7))
+                {
+                    PinCode = reader.GetString(7);
+                }
+            }
+            catch
+            {
+                PinCode = string.Empty;
             }
 
             if (!reader.IsDBNull(4))
@@ -108,7 +115,18 @@ namespace Regin_New.Classes
                 "INSERT INTO users (Login, Password, Name, Image, DateUpdate, DateCreate) " +
                 "VALUES (@Login, @Password, @Name, @Image, @DateUpdate, @DateCreate)",
                 cmd => AddUserParameters(cmd),
-                cmd => cmd.ExecuteNonQuery()
+                cmd =>
+                {
+                    cmd.ExecuteNonQuery();
+
+                    var getIdCmd = new MySqlCommand("SELECT LAST_INSERT_ID()", cmd.Connection);
+                    var result = getIdCmd.ExecuteScalar();
+                    if (result != null)
+                    {
+                        Id = Convert.ToInt32(result);
+                        Console.WriteLine($"User created with ID: {Id}");
+                    }
+                }
             );
         }
 

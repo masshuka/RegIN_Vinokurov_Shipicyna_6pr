@@ -20,12 +20,15 @@ namespace Regin_New.Pages
         int CountSetPassword = 2;
         bool IsCapture = false;
         private const int BlockTimeSeconds = 180;
+        private PasswordBox PinCodeBox;
+        private CheckBox PinCodeToggle;
+        private StackPanel SwitchPanel;
 
         public Login()
         {
             InitializeComponent();
             SubscribeToEvents();
-            AddPinCodeSwitch();
+            InitializePinCodeControls();
         }
 
         private void SubscribeToEvents()
@@ -123,7 +126,6 @@ namespace Regin_New.Pages
             };
             User.BeginAnimation(Image.OpacityProperty, fadeOut);
         }
-
         private void AnimateImageChange(string imageUri)
         {
             var fadeOut = CreateAnimation(1, 0, 0.6);
@@ -201,7 +203,7 @@ namespace Regin_New.Pages
                 new Thread(BlockAuthorization).Start();
             }
 
-            SendMail.SendMessage("An attempt was made to log into your account.",
+            SendMail.SendMessage("Была предпринята попытка входа в Вашу учетную запись.",
                 MainWindow.mainWindow.UserLogIn.Login);
         }
 
@@ -226,6 +228,8 @@ namespace Regin_New.Pages
                 TbLogin.IsEnabled = enabled;
                 TbPassword.IsEnabled = enabled;
                 Capture.IsEnabled = enabled;
+                if (PinCodeToggle != null) PinCodeToggle.IsEnabled = enabled;
+                if (PinCodeBox != null) PinCodeBox.IsEnabled = enabled;
             });
         }
 
@@ -234,7 +238,7 @@ namespace Regin_New.Pages
             Dispatcher.Invoke(() =>
             {
                 var remaining = endTime - DateTime.Now;
-                SetNotification($"Reauthorization available in: {remaining:mm\\:ss}", Brushes.Red);
+                SetNotification($"Повторная авторизация доступна в: {remaining:mm\\:ss}", Brushes.Red);
             });
         }
 
@@ -249,22 +253,23 @@ namespace Regin_New.Pages
                 Capture.CreateCapture();
                 IsCapture = false;
                 CountSetPassword = 2;
+                if (PinCodeToggle != null) PinCodeToggle.IsEnabled = true;
+                if (PinCodeBox != null) PinCodeBox.IsEnabled = true;
             });
         }
-
         private void RecoveryPassword(object sender, MouseButtonEventArgs e) =>
-            MainWindow.mainWindow.OpenPage(new Recovery());
+                    MainWindow.mainWindow.OpenPage(new Recovery());
 
         private void OpenRegIn(object sender, MouseButtonEventArgs e) =>
             MainWindow.mainWindow.OpenPage(new Regin());
 
-        private void AddPinCodeSwitch()
+        private void InitializePinCodeControls()
         {
-            var switchPanel = new StackPanel
+            SwitchPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(10, 400, 10, 0),
+                Margin = new Thickness(0, 375, 0, 0),
                 VerticalAlignment = VerticalAlignment.Top
             };
 
@@ -275,31 +280,33 @@ namespace Regin_New.Pages
                 Foreground = new SolidColorBrush(Color.FromRgb(31, 146, 181))
             };
 
-            var toggleButton = new CheckBox
+            PinCodeToggle = new CheckBox
             {
                 Margin = new Thickness(5, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center
             };
 
-            toggleButton.Checked += (s, e) => SwitchToPinCodeMode();
-            toggleButton.Unchecked += (s, e) => SwitchToPasswordMode();
+            PinCodeToggle.Checked += (s, e) => SwitchToPinCodeMode();
+            PinCodeToggle.Unchecked += (s, e) => SwitchToPasswordMode();
 
-            switchPanel.Children.Add(switchLabel);
-            switchPanel.Children.Add(toggleButton);
+            SwitchPanel.Children.Add(switchLabel);
+            SwitchPanel.Children.Add(PinCodeToggle);
 
-            var grid = (Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0);
-            grid.Children.Add(switchPanel);
+            var mainGrid = FindVisualChild<Grid>(this);
+            if (mainGrid != null)
+            {
+                mainGrid.Children.Add(SwitchPanel);
+            }
         }
 
         private void SwitchToPinCodeMode()
         {
             TbPassword.Visibility = Visibility.Collapsed;
-            var passwordLabel = ((Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0))
-                .Children.OfType<Label>().FirstOrDefault(l => l.Content?.ToString() == "Enter password:");
+            var passwordLabel = FindVisualChild<Label>(this, l => l.Content?.ToString() == "Enter password:");
             if (passwordLabel != null)
                 passwordLabel.Visibility = Visibility.Collapsed;
 
-            var pinBox = new PasswordBox
+            PinCodeBox = new PasswordBox
             {
                 Name = "PinCodeBox",
                 Margin = new Thickness(10, 342, 10, 0),
@@ -307,24 +314,28 @@ namespace Regin_New.Pages
                 Height = 26,
                 MaxLength = 4
             };
-            pinBox.KeyUp += PinCodeBox_KeyUp;
+            PinCodeBox.KeyUp += PinCodeBox_KeyUp;
 
-            var grid = (Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0);
-            grid.Children.Add(pinBox);
+            var mainGrid = FindVisualChild<Grid>(this);
+            if (mainGrid != null)
+            {
+                mainGrid.Children.Add(PinCodeBox);
+            }
         }
 
         private void SwitchToPasswordMode()
         {
             TbPassword.Visibility = Visibility.Visible;
-            var passwordLabel = ((Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0))
-                .Children.OfType<Label>().FirstOrDefault(l => l.Content?.ToString() == "Enter password:");
+            var passwordLabel = FindVisualChild<Label>(this, l => l.Content?.ToString() == "Enter password:");
             if (passwordLabel != null)
                 passwordLabel.Visibility = Visibility.Visible;
 
-            var grid = (Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0);
-            var pinBox = grid.Children.OfType<PasswordBox>().FirstOrDefault(p => p.Name == "PinCodeBox");
-            if (pinBox != null)
-                grid.Children.Remove(pinBox);
+            var mainGrid = FindVisualChild<Grid>(this);
+            if (mainGrid != null && PinCodeBox != null)
+            {
+                mainGrid.Children.Remove(PinCodeBox);
+                PinCodeBox = null;
+            }
         }
 
         private void PinCodeBox_KeyUp(object sender, KeyEventArgs e)
@@ -337,24 +348,50 @@ namespace Regin_New.Pages
 
         private void AuthenticateWithPinCode()
         {
-            var grid = (Grid)VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(this, 0), 0);
-            var pinBox = grid.Children.OfType<PasswordBox>().FirstOrDefault(p => p.Name == "PinCodeBox");
-
-            if (pinBox == null || pinBox.Password.Length != 4)
+            if (PinCodeBox == null || PinCodeBox.Password.Length != 4)
             {
                 SetNotification("Enter 4-digit PIN", Brushes.Red);
                 return;
             }
 
-            if (MainWindow.mainWindow.UserLogIn.PinCode == pinBox.Password)
+            if (MainWindow.mainWindow.UserLogIn.PinCode == PinCodeBox.Password)
             {
                 MainWindow.mainWindow.OpenPage(new Confirmation(Confirmation.TypeConfirmation.Login));
             }
             else
             {
                 SetNotification("Invalid PIN", Brushes.Red);
-                pinBox.Password = "";
+                PinCodeBox.Password = "";
             }
+        }
+        private T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T result)
+                    return result;
+
+                var childResult = FindVisualChild<T>(child);
+                if (childResult != null)
+                    return childResult;
+            }
+            return null;
+        }
+
+        private T FindVisualChild<T>(DependencyObject parent, Func<T, bool> predicate) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T result && predicate(result))
+                    return result;
+
+                var childResult = FindVisualChild(child, predicate);
+                if (childResult != null)
+                    return childResult;
+            }
+            return null;
         }
     }
 }

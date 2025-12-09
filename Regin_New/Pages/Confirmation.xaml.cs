@@ -37,7 +37,7 @@ namespace Regin_New.Pages
             {
                 Dispatcher.Invoke(() =>
                 {
-                    lTimer.Content = $"A second message can be sent after {i} seconds";
+                    lTimer.Content = $"Второе сообщение можно отправить после {i} секунд";
                 });
                 Thread.Sleep(1000);
             }
@@ -74,12 +74,12 @@ namespace Regin_New.Pages
 
             if (confirmationType == TypeConfirmation.Login)
             {
-                MessageBox.Show("Authorization confirmed successfully.");
+                MessageBox.Show("Авторизация успешно подтверждена.");
 
                 if (string.IsNullOrEmpty(MainWindow.mainWindow.UserLogIn.PinCode))
                 {
-                    var result = MessageBox.Show("Set up a 4-digit PIN for quick login?",
-                        "Quick Login", MessageBoxButton.YesNo);
+                    var result = MessageBox.Show("Установить 4-значный PIN-код для быстрого входа?",
+                        "Быстрый вход", MessageBoxButton.YesNo);
 
                     if (result == MessageBoxResult.Yes)
                     {
@@ -91,10 +91,10 @@ namespace Regin_New.Pages
             else
             {
                 MainWindow.mainWindow.UserLogIn.SetUser();
-                MessageBox.Show("Registration confirmed successfully.");
+                MessageBox.Show("Регистрация успешно подтверждена.");
 
-                var result = MessageBox.Show("Set up a 4-digit PIN for quick login?",
-                    "Quick Login", MessageBoxButton.YesNo);
+                var result = MessageBox.Show("Установить 4-значный PIN-код для быстрого входа?",
+                    "Быстрый вход", MessageBoxButton.YesNo);
 
                 if (result == MessageBoxResult.Yes)
                 {
