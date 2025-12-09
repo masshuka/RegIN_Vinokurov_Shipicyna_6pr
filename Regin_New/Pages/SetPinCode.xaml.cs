@@ -1,5 +1,4 @@
-﻿
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -16,7 +15,6 @@ namespace Regin_New.Pages
 
         private void PinCodeTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-       
             e.Handled = !Regex.IsMatch(e.Text, "^[0-9]+$");
         }
 
@@ -24,38 +22,17 @@ namespace Regin_New.Pages
         {
             if (PinCodeTextBox.Text.Length == 4)
             {
-                MainWindow.mainWindow.UserLogIn.PinCode = PinCodeTextBox.Text;
-                SavePinCodeToDatabase();
+                string newPinCode = PinCodeTextBox.Text;
+                // Обновляем PIN-код в объекте пользователя и в базе данных
+                MainWindow.mainWindow.UserLogIn.UpdatePinCode(newPinCode);
 
-                MessageBox.Show("Пин-код успешно установлен! Теперь вы можете использовать его для быстрой авторизации.");
+                MessageBox.Show("Пин-код успешно установлен!");
                 MainWindow.mainWindow.OpenPage(new Login());
             }
             else if (PinCodeTextBox.Text.Length > 4)
             {
                 PinCodeTextBox.Text = PinCodeTextBox.Text.Substring(0, 4);
                 PinCodeTextBox.CaretIndex = 4;
-            }
-        }
-
-        private void SavePinCodeToDatabase()
-        {
-            var connection = Classes.WorkingDB.OpenConnection();
-            if (connection != null)
-            {
-                try
-                {
-                    using (var cmd = new MySql.Data.MySqlClient.MySqlCommand(
-                        "UPDATE users SET PinCode = @PinCode WHERE Id = @Id", connection))
-                    {
-                        cmd.Parameters.AddWithValue("@PinCode", MainWindow.mainWindow.UserLogIn.PinCode);
-                        cmd.Parameters.AddWithValue("@Id", MainWindow.mainWindow.UserLogIn.Id);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-                finally
-                {
-                    Classes.WorkingDB.CloseConnection(connection);
-                }
             }
         }
 

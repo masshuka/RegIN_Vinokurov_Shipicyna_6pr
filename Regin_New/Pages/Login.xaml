@@ -17,8 +17,8 @@
       Background="{DynamicResource MaterialDesignPaper}"
       FontFamily="{DynamicResource MaterialDesignFont}">
 
-    <Grid>
-        <materialDesign:Card Height="400"
+    <Grid x:Name="MainGrid">
+        <materialDesign:Card Height="420"
             VerticalAlignment="Center"
             HorizontalAlignment="Center"
             Width="300">
@@ -31,7 +31,7 @@
                    Width="100"
                    Source="/Images/ic-user.png">
                     <Image.Clip>
-                        <EllipseGeometry RadiusX="50" RadiusY="50" Center="50, 50"/>
+                        <EllipseGeometry RadiusX="50" RadiusY="50" Center="50,50"/>
                     </Image.Clip>
                 </Image>
                 <Label x:Name="Username"
@@ -57,7 +57,8 @@
                     Margin="10,213,10,0"
                     Height="100"
                     VerticalAlignment="Top"/>
-                <Label Content="Enter password:"
+                <Label x:Name="PasswordLabel" 
+                   Content="Enter password:"
                    Margin="10,318,10,0"
                    VerticalAlignment="Top"/>
                 <PasswordBox x:Name="TbPassword"
@@ -65,8 +66,33 @@
                          VerticalAlignment="Top"
                          Height="26"
                          KeyUp="SetPassword"/>
+
+                <!-- Контейнер для PIN-кода -->
+                <StackPanel x:Name="PinCodeContainer" 
+                          Visibility="Collapsed"
+                          Margin="10,318,10,0"
+                          VerticalAlignment="Top">
+                    <Label Content="Enter PIN-code (4 digits):"
+                           FontSize="11"
+                           Margin="0,0,0,5"/>
+                    <PasswordBox x:Name="PinCodeBox"
+                             Height="26"
+                             MaxLength="4"
+                             KeyUp="PinCodeBox_KeyUp"/>
+                </StackPanel>
+
+
+                <Label Content="Use PIN-code"
+                       FontSize="10"
+                       Foreground="#FF1F92B5"
+                       Margin="140,398,0,0"
+                       VerticalAlignment="Top"
+                       MouseDown="SwitchToPinCode"
+                       HorizontalAlignment="Left"
+                       Width="110"/>
+                
                 <Label Content="Forgot your password?"
-                   Margin="10,373,0,0"
+                   Margin="10,398,0,0"
                    VerticalAlignment="Top"
                    Foreground="#FF1F92B5"
                    FontSize="10"
@@ -74,7 +100,7 @@
                    HorizontalAlignment="Left"
                    Width="110"/>
                 <Label Content="Registration"
-                   Margin="0,373,10,0"
+                   Margin="0,398,10,0"
                    VerticalAlignment="Top"
                    Foreground="#FF1F92B5"
                    FontSize="10"
